@@ -9,12 +9,12 @@ CONTRACT="one1tj748034gl3zvujn2tz4p4m8rf9j9uarsj5j3c5a5z2neqel77cslz2lp0"
 
 LATEST=$(bash scripts/query_all_nfts.sh | jq -r ".data.tokens | last")
 TOKEN_ID=$(($LATEST+1))
-
+MODEL_ID="$1"
+SIZE="M"
 # CHANGE ONLY THIS
 OWNER="Developer"
-TOKEN_URI="https://drive.google.com/file/d/1HpYCJaIB4nEu54V8cPAK1cCiIur9Ua0M/view?usp=sharing"
 
-MINT="{\"mint\": {\"token_id\":\"$TOKEN_ID\",  \"token_uri\": \"$TOKEN_URI\", \"owner\":\"$(anoned keys show $OWNER -a)\"}}"
+MINT="{\"mint\": {\"model_id\":\"$MODEL_ID\", \"token_id\":\"$TOKEN_ID\",  \"size\": \"$SIZE\", \"owner\":\"$(anoned keys show $OWNER -a)\"}}"
 
 echo $MINT
 

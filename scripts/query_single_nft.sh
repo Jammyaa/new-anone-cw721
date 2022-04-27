@@ -6,7 +6,7 @@ NODE="http://65.108.128.139:2281"
 ACCOUNT="Developer"
 CHAINID="anone-testnet-1"
 SLEEP_TIME="15s"
-CONTRACT="one1t03wt66r7xqszqfwyjhvklyynrk2tyqelhk30u9aga48ajy5kclq0xt3tt"
+CONTRACT="one1tj748034gl3zvujn2tz4p4m8rf9j9uarsj5j3c5a5z2neqel77cslz2lp0"
 
 # CHANGE TOKEN_ID HERE
 # $# is to check number of arguments
