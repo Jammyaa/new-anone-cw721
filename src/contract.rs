@@ -4,12 +4,15 @@ use serde::Serialize;
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response};
 
 use cw2::set_contract_version;
-use cw721::{ContractInfoResponse, CustomMsg, Cw721Execute, Cw721ReceiveMsg, Expiration};
+use cw721::{CustomMsg, Cw721Execute, Cw721ReceiveMsg, Expiration};
 use url::Url;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, MintMsg};
-use crate::state::{Approval, AnoneCw721Contract, TokenInfo, CollectionInfo, RoyaltyInfo, COLLECTION_INFO};
+use crate::msg::{ContractInfoResponse, CreateShoeModelMsg, ExecuteMsg, InstantiateMsg, MintMsg};
+use crate::state::{
+    AnoneCw721Contract, Approval, CollectionInfo, ModelInfo, RoyaltyInfo, TokenInfo,
+    COLLECTION_INFO,
+};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:anone-cw721";
@@ -38,41 +41,41 @@ where
         let minter = deps.api.addr_validate(&msg.minter)?;
         self.minter.save(deps.storage, &minter)?;
         // anone-cw721 instantiation
-    if msg.collection_info.description.len() > MAX_DESCRIPTION_LENGTH as usize {
-        return Err(ContractError::DescriptionTooLong {});
-    }
+        if msg.collection_info.description.len() > MAX_DESCRIPTION_LENGTH as usize {
+            return Err(ContractError::DescriptionTooLong {});
+        }
 
-    let image = Url::parse(&msg.collection_info.image)?;
+        let image = Url::parse(&msg.collection_info.image)?;
 
-    if let Some(ref external_link) = msg.collection_info.external_link {
-        Url::parse(external_link)?;
-    }
+        if let Some(ref external_link) = msg.collection_info.external_link {
+            Url::parse(external_link)?;
+        }
 
-    let royalty_info: Option<RoyaltyInfo> = match msg.collection_info.royalty_info {
-        Some(royalty_info) => Some(RoyaltyInfo {
-            payment_address: deps.api.addr_validate(&royalty_info.payment_address)?,
-            share: royalty_info.share_validate()?,
-        }),
-        None => None,
-    };
+        let royalty_info: Option<RoyaltyInfo> = match msg.collection_info.royalty_info {
+            Some(royalty_info) => Some(RoyaltyInfo {
+                payment_address: deps.api.addr_validate(&royalty_info.payment_address)?,
+                share: royalty_info.share_validate()?,
+            }),
+            None => None,
+        };
 
-    deps.api.addr_validate(&msg.collection_info.creator)?;
+        deps.api.addr_validate(&msg.collection_info.creator)?;
 
-    let collection_info = CollectionInfo {
-        creator: msg.collection_info.creator,
-        description: msg.collection_info.description,
-        image: msg.collection_info.image,
-        external_link: msg.collection_info.external_link,
-        royalty_info,
-    };
+        let collection_info = CollectionInfo {
+            creator: msg.collection_info.creator,
+            description: msg.collection_info.description,
+            image: msg.collection_info.image,
+            external_link: msg.collection_info.external_link,
+            royalty_info,
+        };
 
-    COLLECTION_INFO.save(deps.storage, &collection_info)?;
+        COLLECTION_INFO.save(deps.storage, &collection_info)?;
 
-    Ok(Response::default()
-        .add_attribute("action", "instantiate")
-        .add_attribute("contract_name", CONTRACT_NAME)
-        .add_attribute("contract_version", CONTRACT_VERSION)
-        .add_attribute("image", image.to_string()))
+        Ok(Response::default()
+            .add_attribute("action", "instantiate")
+            .add_attribute("contract_name", CONTRACT_NAME)
+            .add_attribute("contract_version", CONTRACT_VERSION)
+            .add_attribute("image", image.to_string()))
     }
 
     pub fn execute(
@@ -84,6 +87,7 @@ where
     ) -> Result<Response<C>, ContractError> {
         match msg {
             ExecuteMsg::Mint(msg) => self.mint(deps, env, info, msg),
+            ExecuteMsg::CreateShoeModel(msg) => self.create_model(deps, env, info, msg),
             ExecuteMsg::Approve {
                 spender,
                 token_id,
@@ -129,13 +133,19 @@ where
             return Err(ContractError::Unauthorized {});
         }
 
+        let model = self.models.load(deps.storage, &msg.model_id)?;
+
         // create the token
         let token = TokenInfo {
             owner: deps.api.addr_validate(&msg.owner)?,
             approvals: vec![],
-            token_uri: msg.token_uri,
+            model_id: msg.model_id,
+            token_uri: model.model_uri,
+            size: msg.size,
             extension: msg.extension,
         };
+
+        
         self.tokens
             .update(deps.storage, &msg.token_id, |old| match old {
                 Some(_) => Err(ContractError::Claimed {}),
@@ -148,6 +158,45 @@ where
             .add_attribute("action", "mint")
             .add_attribute("minter", info.sender)
             .add_attribute("token_id", msg.token_id))
+    }
+}
+
+impl<'a, T, C> AnoneCw721Contract<'a, T, C>
+where
+    T: Serialize + DeserializeOwned + Clone,
+    C: CustomMsg,
+{
+    pub fn create_model(
+        &self,
+        deps: DepsMut,
+        _env: Env,
+        info: MessageInfo,
+        msg: CreateShoeModelMsg<T>,
+    ) -> Result<Response<C>, ContractError> {
+        let minter = self.minter.load(deps.storage)?;
+
+        if info.sender != minter {
+            return Err(ContractError::Unauthorized {});
+        }
+
+        // create the shoe model
+        let model = ModelInfo {
+            owner: deps.api.addr_validate(&msg.owner)?,
+            model_uri: msg.model_uri,
+            extension: msg.extension,
+        };
+        self.models
+            .update(deps.storage, &msg.model_id, |old| match old {
+                Some(_) => Err(ContractError::ModelClaimed {}),
+                None => Ok(model),
+            })?;
+
+        self.increment_models(deps.storage)?;
+
+        Ok(Response::new()
+            .add_attribute("action", "mint")
+            .add_attribute("minter", info.sender)
+            .add_attribute("model_id", msg.model_id))
     }
 }
 

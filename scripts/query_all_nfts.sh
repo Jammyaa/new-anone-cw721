@@ -6,7 +6,7 @@ NODE="http://65.108.128.139:2281"
 ACCOUNT="Developer"
 CHAINID="anone-testnet-1"
 SLEEP_TIME="15s"
-CONTRACT="one1mych7nr7fk86y2ezekkqfwsqpl8ax659ez4r4lm87x6clhz65q9sn4ngte"
+CONTRACT="one1y7huam75d803m9mwqgmuwtercrccgxuwu5py2n7xlvllw3w0wq8shafqe3"
 
 ALL_NFTS_QUERY="{\"all_tokens\": {}}"
 OWNER_OF=$(anoned query wasm contract-state smart "$CONTRACT" "$ALL_NFTS_QUERY" --node "$NODE" --output json)

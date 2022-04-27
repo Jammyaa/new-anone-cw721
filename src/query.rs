@@ -3,26 +3,34 @@ use serde::Serialize;
 
 use cosmwasm_std::{to_binary, Addr, Binary, BlockInfo, Deps, Env, Order, StdError, StdResult};
 
-use cw721::{
-    AllNftInfoResponse, ApprovalResponse, ApprovalsResponse, ContractInfoResponse, CustomMsg,
-    Cw721Query, Expiration, NftInfoResponse, NumTokensResponse, OperatorsResponse, OwnerOfResponse,
-    TokensResponse,
-};
+use cw721::{CustomMsg, Expiration};
 use cw_storage_plus::Bound;
 use cw_utils::maybe_addr;
 
-use crate::msg::{MinterResponse, QueryMsg, CollectionInfoResponse, RoyaltyInfoResponse};
-use crate::state::{Approval, AnoneCw721Contract, TokenInfo};
-use crate::state::{COLLECTION_INFO};
+use crate::msg::{
+    AllNftInfoResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse,
+    ContractInfoResponse, MinterResponse, ModelInfoResponse, ModelsResponse, NftInfoResponse,
+    NumModelsResponse, NumTokensResponse, OperatorsResponse, OwnerOfResponse, QueryMsg,
+    RoyaltyInfoResponse, TokensResponse,
+};
+use crate::state::COLLECTION_INFO;
+use crate::state::{AnoneCw721Contract, Approval, TokenInfo};
 
 const DEFAULT_LIMIT: u32 = 10;
 const MAX_LIMIT: u32 = 30;
 
-impl<'a, T, C> Cw721Query<T> for AnoneCw721Contract<'a, T, C>
+impl<'a, T, C> AnoneCw721Contract<'a, T, C>
 where
     T: Serialize + DeserializeOwned + Clone,
     C: CustomMsg,
 {
+    pub fn minter(&self, deps: Deps) -> StdResult<MinterResponse> {
+        let minter_addr = self.minter.load(deps.storage)?;
+        Ok(MinterResponse {
+            minter: minter_addr.to_string(),
+        })
+    }
+
     fn contract_info(&self, deps: Deps) -> StdResult<ContractInfoResponse> {
         self.contract_info.load(deps.storage)
     }
@@ -32,10 +40,25 @@ where
         Ok(NumTokensResponse { count })
     }
 
+    fn num_models(&self, deps: Deps) -> StdResult<NumModelsResponse> {
+        let count = self.model_count(deps.storage)?;
+        Ok(NumModelsResponse { count })
+    }
+
     fn nft_info(&self, deps: Deps, token_id: String) -> StdResult<NftInfoResponse<T>> {
         let info = self.tokens.load(deps.storage, &token_id)?;
         Ok(NftInfoResponse {
             token_uri: info.token_uri,
+            size: info.size,
+            extension: info.extension,
+        })
+    }
+
+    fn model_info(&self, deps: Deps, model_id: String) -> StdResult<ModelInfoResponse<T>> {
+        let info = self.models.load(deps.storage, &model_id)?;
+        Ok(ModelInfoResponse {
+            owner: info.owner.to_string(),
+            model_uri: info.model_uri,
             extension: info.extension,
         })
     }
@@ -94,8 +117,8 @@ where
 
         // token owner has absolute approval
         if token.owner == spender {
-            let approval = cw721::Approval {
-                spender: token.owner.to_string(),
+            let approval = Approval {
+                spender: token.owner,
                 expires: Expiration::Never {},
             };
             return Ok(ApprovalResponse { approval });
@@ -106,8 +129,8 @@ where
             .into_iter()
             .filter(|t| t.spender == spender)
             .filter(|t| include_expired || !t.is_expired(&env.block))
-            .map(|a| cw721::Approval {
-                spender: a.spender.into_string(),
+            .map(|a| Approval {
+                spender: a.spender,
                 expires: a.expires,
             })
             .collect();
@@ -134,8 +157,8 @@ where
             .approvals
             .into_iter()
             .filter(|t| include_expired || !t.is_expired(&env.block))
-            .map(|a| cw721::Approval {
-                spender: a.spender.into_string(),
+            .map(|a| Approval {
+                spender: a.spender,
                 expires: a.expires,
             })
             .collect();
@@ -186,6 +209,25 @@ where
         Ok(TokensResponse { tokens: tokens? })
     }
 
+    fn all_models(
+        &self,
+        deps: Deps,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> StdResult<ModelsResponse> {
+        let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+        let start = start_after.map(Bound::exclusive);
+
+        let models: StdResult<Vec<String>> = self
+            .models
+            .range(deps.storage, start, None, Order::Ascending)
+            .take(limit)
+            .map(|item| item.map(|(k, _)| k))
+            .collect();
+
+        Ok(ModelsResponse { models: models? })
+    }
+
     fn all_nft_info(
         &self,
         deps: Deps,
@@ -201,21 +243,9 @@ where
             },
             info: NftInfoResponse {
                 token_uri: info.token_uri,
+                size: info.size,
                 extension: info.extension,
             },
-        })
-    }
-}
-
-impl<'a, T, C> AnoneCw721Contract<'a, T, C>
-where
-    T: Serialize + DeserializeOwned + Clone,
-    C: CustomMsg,
-{
-    pub fn minter(&self, deps: Deps) -> StdResult<MinterResponse> {
-        let minter_addr = self.minter.load(deps.storage)?;
-        Ok(MinterResponse {
-            minter: minter_addr.to_string(),
         })
     }
 
@@ -239,6 +269,7 @@ where
                 token_id,
                 include_expired.unwrap_or(false),
             )?),
+            QueryMsg::ModelInfo { model_id } => to_binary(&self.model_info(deps, model_id)?),
             QueryMsg::AllOperators {
                 owner,
                 include_expired,
@@ -253,6 +284,7 @@ where
                 limit,
             )?),
             QueryMsg::NumTokens {} => to_binary(&self.num_tokens(deps)?),
+            QueryMsg::NumModels {} => to_binary(&self.num_models(deps)?),
             QueryMsg::Tokens {
                 owner,
                 start_after,
@@ -260,7 +292,10 @@ where
             } => to_binary(&self.tokens(deps, owner, start_after, limit)?),
             QueryMsg::AllTokens { start_after, limit } => {
                 to_binary(&self.all_tokens(deps, start_after, limit)?)
-            }
+            },
+            QueryMsg::AllModels { start_after, limit } => {
+                to_binary(&self.all_models(deps, start_after, limit)?)
+            },
             QueryMsg::Approval {
                 token_id,
                 spender,
@@ -277,8 +312,8 @@ where
                 include_expired,
             } => {
                 to_binary(&self.approvals(deps, env, token_id, include_expired.unwrap_or(false))?)
-            },
-            QueryMsg::CollectionInfo {} => to_binary(&query_config(deps)?)
+            }
+            QueryMsg::CollectionInfo {} => to_binary(&query_config(deps)?),
         }
     }
 }
@@ -303,9 +338,9 @@ fn query_config(deps: Deps) -> StdResult<CollectionInfoResponse> {
     })
 }
 
-fn parse_approval(item: StdResult<(Addr, Expiration)>) -> StdResult<cw721::Approval> {
-    item.map(|(spender, expires)| cw721::Approval {
-        spender: spender.to_string(),
+fn parse_approval(item: StdResult<(Addr, Expiration)>) -> StdResult<Approval> {
+    item.map(|(spender, expires)| Approval {
+        spender: spender,
         expires,
     })
 }
@@ -314,7 +349,7 @@ fn humanize_approvals<T>(
     block: &BlockInfo,
     info: &TokenInfo<T>,
     include_expired: bool,
-) -> Vec<cw721::Approval> {
+) -> Vec<Approval> {
     info.approvals
         .iter()
         .filter(|apr| include_expired || !apr.is_expired(block))
@@ -322,9 +357,9 @@ fn humanize_approvals<T>(
         .collect()
 }
 
-fn humanize_approval(approval: &Approval) -> cw721::Approval {
-    cw721::Approval {
-        spender: approval.spender.to_string(),
+fn humanize_approval(approval: &Approval) -> Approval {
+    Approval {
+        spender: approval.spender.clone(),
         expires: approval.expires,
     }
 }

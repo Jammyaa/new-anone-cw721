@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 use cosmwasm_std::{Binary, Decimal};
 use cw721::Expiration;
 
-use crate::{state::CollectionInfo, ContractError};
+use crate::{state::{CollectionInfo, Approval}, ContractError};
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub name: String,
@@ -38,6 +39,8 @@ pub enum ExecuteMsg<T> {
 
     Mint(MintMsg<T>),
 
+    CreateShoeModel(CreateShoeModelMsg<T>),
+
     Burn { token_id: String },
 }
 
@@ -45,7 +48,16 @@ pub enum ExecuteMsg<T> {
 pub struct MintMsg<T> {
     pub token_id: String,
     pub owner: String,
-    pub token_uri: Option<String>,
+    pub model_id: String,
+    pub size: String,
+    pub extension: T,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct CreateShoeModelMsg<T> {
+    pub model_id: String,
+    pub owner: String,
+    pub model_uri: String,
     pub extension: T,
 }
 
@@ -77,6 +89,8 @@ pub enum QueryMsg {
  
     NumTokens {},
 
+    NumModels {},
+
     ContractInfo {},
  
     NftInfo {
@@ -88,6 +102,10 @@ pub enum QueryMsg {
         include_expired: Option<bool>,
     },
 
+    ModelInfo {
+        model_id: String,
+    },
+
     Tokens {
         owner: String,
         start_after: Option<String>,
@@ -95,6 +113,11 @@ pub enum QueryMsg {
     },
 
     AllTokens {
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
+
+    AllModels {
         start_after: Option<String>,
         limit: Option<u32>,
     },
@@ -132,4 +155,72 @@ impl RoyaltyInfoResponse {
 
         Ok(self.share)
     }
+}
+
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct OwnerOfResponse {
+    pub owner: String,
+    pub approvals: Vec<Approval>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct ApprovalResponse {
+    pub approval: Approval,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct ApprovalsResponse {
+    pub approvals: Vec<Approval>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct OperatorsResponse {
+    pub operators: Vec<Approval>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct NumTokensResponse {
+    pub count: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct NumModelsResponse {
+    pub count: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct ContractInfoResponse {
+    pub name: String,
+    pub symbol: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct AllNftInfoResponse<T> {
+    pub access: OwnerOfResponse,
+    pub info: NftInfoResponse<T>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct NftInfoResponse<T> {
+    pub token_uri: String,
+    pub size: String,
+    pub extension: T,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct ModelInfoResponse<T> {
+    pub owner: String,
+    pub model_uri: String,
+    pub extension: T,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct TokensResponse {
+    pub tokens: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct ModelsResponse {
+    pub models: Vec<String>,
 }
