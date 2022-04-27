@@ -203,6 +203,7 @@ pub struct AllNftInfoResponse<T> {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct NftInfoResponse<T> {
+    pub model_id: String,
     pub token_uri: String,
     pub size: String,
     pub extension: T,
