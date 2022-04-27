@@ -9,14 +9,14 @@ use url::Url;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MintMsg};
-use crate::state::{Approval, Cw721Contract, TokenInfo, CollectionInfo, RoyaltyInfo, COLLECTION_INFO};
+use crate::state::{Approval, AnoneCw721Contract, TokenInfo, CollectionInfo, RoyaltyInfo, COLLECTION_INFO};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:anone-cw721";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 const MAX_DESCRIPTION_LENGTH: u32 = 512;
 
-impl<'a, T, C> Cw721Contract<'a, T, C>
+impl<'a, T, C> AnoneCw721Contract<'a, T, C>
 where
     T: Serialize + DeserializeOwned + Clone,
     C: CustomMsg,
@@ -111,7 +111,7 @@ where
 }
 
 // TODO pull this into some sort of trait extension??
-impl<'a, T, C> Cw721Contract<'a, T, C>
+impl<'a, T, C> AnoneCw721Contract<'a, T, C>
 where
     T: Serialize + DeserializeOwned + Clone,
     C: CustomMsg,
@@ -151,7 +151,7 @@ where
     }
 }
 
-impl<'a, T, C> Cw721Execute<T, C> for Cw721Contract<'a, T, C>
+impl<'a, T, C> Cw721Execute<T, C> for AnoneCw721Contract<'a, T, C>
 where
     T: Serialize + DeserializeOwned + Clone,
     C: CustomMsg,
@@ -300,7 +300,7 @@ where
 }
 
 // helpers
-impl<'a, T, C> Cw721Contract<'a, T, C>
+impl<'a, T, C> AnoneCw721Contract<'a, T, C>
 where
     T: Serialize + DeserializeOwned + Clone,
     C: CustomMsg,

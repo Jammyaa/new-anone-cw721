@@ -7,12 +7,14 @@ use cosmwasm_std::{Addr, BlockInfo, Decimal, StdResult, Storage};
 
 use cw721::{ContractInfoResponse, CustomMsg, Cw721, Expiration};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, MultiIndex};
+use crate::msg::CollectionInfoResponse;
 
-pub struct Cw721Contract<'a, T, C>
+pub struct AnoneCw721Contract<'a, T, C>
 where
     T: Serialize + DeserializeOwned + Clone,
 {
     pub contract_info: Item<'a, ContractInfoResponse>,
+    pub collection_info: Item<'a, CollectionInfoResponse>,
     pub minter: Item<'a, Addr>,
     pub token_count: Item<'a, u64>,
     /// Stored as (granter, operator) giving operator full control over granter's account
@@ -23,20 +25,21 @@ where
 }
 
 // This is a signal, the implementations are in other files
-impl<'a, T, C> Cw721<T, C> for Cw721Contract<'a, T, C>
+impl<'a, T, C> Cw721<T, C> for AnoneCw721Contract<'a, T, C>
 where
     T: Serialize + DeserializeOwned + Clone,
     C: CustomMsg,
 {
 }
 
-impl<T, C> Default for Cw721Contract<'static, T, C>
+impl<T, C> Default for AnoneCw721Contract<'static, T, C>
 where
     T: Serialize + DeserializeOwned + Clone,
 {
     fn default() -> Self {
         Self::new(
             "nft_info",
+            "collection_info",
             "minter",
             "num_tokens",
             "operators",
@@ -46,12 +49,13 @@ where
     }
 }
 
-impl<'a, T, C> Cw721Contract<'a, T, C>
+impl<'a, T, C> AnoneCw721Contract<'a, T, C>
 where
     T: Serialize + DeserializeOwned + Clone,
 {
     fn new(
         contract_key: &'a str,
+        collection_key: &'a str,
         minter_key: &'a str,
         token_count_key: &'a str,
         operator_key: &'a str,
@@ -63,6 +67,7 @@ where
         };
         Self {
             contract_info: Item::new(contract_key),
+            collection_info: Item::new(collection_key),
             minter: Item::new(minter_key),
             token_count: Item::new(token_count_key),
             operators: Map::new(operator_key),

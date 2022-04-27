@@ -6,7 +6,7 @@ pub mod state;
 
 pub use crate::error::ContractError;
 pub use crate::msg::{ExecuteMsg, InstantiateMsg, MintMsg, MinterResponse, QueryMsg};
-pub use crate::state::Cw721Contract;
+pub use crate::state::AnoneCw721Contract;
 use cosmwasm_std::Empty;
 
 // This is a simple type to let us handle empty extensions
@@ -27,7 +27,7 @@ pub mod entry {
         info: MessageInfo,
         msg: InstantiateMsg,
     ) -> Result<Response, ContractError> {
-        let tract = Cw721Contract::<Extension, Empty>::default();
+        let tract = AnoneCw721Contract::<Extension, Empty>::default();
         tract.instantiate(deps, env, info, msg)
     }
 
@@ -38,13 +38,13 @@ pub mod entry {
         info: MessageInfo,
         msg: ExecuteMsg<Extension>,
     ) -> Result<Response, ContractError> {
-        let tract = Cw721Contract::<Extension, Empty>::default();
+        let tract = AnoneCw721Contract::<Extension, Empty>::default();
         tract.execute(deps, env, info, msg)
     }
 
     #[entry_point]
     pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
-        let tract = Cw721Contract::<Extension, Empty>::default();
+        let tract = AnoneCw721Contract::<Extension, Empty>::default();
         tract.query(deps, env, msg)
     }
 }

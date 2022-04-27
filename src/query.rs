@@ -12,13 +12,13 @@ use cw_storage_plus::Bound;
 use cw_utils::maybe_addr;
 
 use crate::msg::{MinterResponse, QueryMsg, CollectionInfoResponse, RoyaltyInfoResponse};
-use crate::state::{Approval, Cw721Contract, TokenInfo};
+use crate::state::{Approval, AnoneCw721Contract, TokenInfo};
 use crate::state::{COLLECTION_INFO};
 
 const DEFAULT_LIMIT: u32 = 10;
 const MAX_LIMIT: u32 = 30;
 
-impl<'a, T, C> Cw721Query<T> for Cw721Contract<'a, T, C>
+impl<'a, T, C> Cw721Query<T> for AnoneCw721Contract<'a, T, C>
 where
     T: Serialize + DeserializeOwned + Clone,
     C: CustomMsg,
@@ -207,7 +207,7 @@ where
     }
 }
 
-impl<'a, T, C> Cw721Contract<'a, T, C>
+impl<'a, T, C> AnoneCw721Contract<'a, T, C>
 where
     T: Serialize + DeserializeOwned + Clone,
     C: CustomMsg,
