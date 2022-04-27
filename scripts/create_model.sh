@@ -5,9 +5,9 @@ NODE="http://65.108.128.139:2281"
 #OWNER="test"
 CHAINID="anone-testnet-1"
 SLEEP_TIME="15s"
-CONTRACT="one1y7huam75d803m9mwqgmuwtercrccgxuwu5py2n7xlvllw3w0wq8shafqe3"
+CONTRACT="one1nq6auma68amwaz5w5t2hdad8p9jh03t0txlz0g5y66l4yswepkyq027dnt"
 
-# LATEST=$(bash scripts/query_all_nfts.sh | jq -r ".data.tokens | last")
+LATEST=$(bash scripts/query_all_models.sh | jq -r ".data.tokens | last")
 MODEL_ID=$(($LATEST+1))
 
 # CHANGE ONLY THIS
