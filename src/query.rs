@@ -11,10 +11,10 @@ use crate::msg::{
     AllNftInfoResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse,
     ContractInfoResponse, MinterResponse, ModelInfoResponse, ModelsResponse, NftInfoResponse,
     NumModelsResponse, NumTokensResponse, OperatorsResponse, OwnerOfResponse, QueryMsg,
-    RoyaltyInfoResponse, TokensResponse, AllNftsResponse
+    RoyaltyInfoResponse, TokensResponse, AllNftsResponse, AllModelsResponse
 };
 use crate::state::COLLECTION_INFO;
-use crate::state::{AnoneCw721Contract, Approval, TokenInfo};
+use crate::state::{AnoneCw721Contract, Approval, TokenInfo, ModelInfo};
 
 const DEFAULT_LIMIT: u32 = 10;
 const MAX_LIMIT: u32 = 30;
@@ -248,6 +248,25 @@ where
         Ok(ModelsResponse { models: models? })
     }
 
+    fn all_models_info(
+        &self,
+        deps: Deps,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> StdResult<AllModelsResponse<T>> {
+        let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+        let start = start_after.map(Bound::exclusive);
+
+        let models: StdResult<Vec<ModelInfo<T>>> = self
+            .models
+            .range(deps.storage, start, None, Order::Ascending)
+            .take(limit)
+            .map(|item| item.map(|(_, info)| info))
+            .collect();
+
+        Ok(AllModelsResponse { all_models_info: models? })
+    }
+
     fn all_nft_info(
         &self,
         deps: Deps,
@@ -319,6 +338,9 @@ where
             },
             QueryMsg::AllModels { start_after, limit } => {
                 to_binary(&self.all_models(deps, start_after, limit)?)
+            },
+            QueryMsg::AllModelsInfo { start_after, limit } => {
+                to_binary(&self.all_models_info(deps, start_after, limit)?)
             },
             QueryMsg::Approval {
                 token_id,

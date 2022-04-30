@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use cosmwasm_std::{Binary, Decimal};
 use cw721::Expiration;
 
-use crate::{state::{CollectionInfo, Approval, TokenInfo}, ContractError};
+use crate::{state::{CollectionInfo, Approval, TokenInfo, ModelInfo}, ContractError};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -127,6 +127,11 @@ pub enum QueryMsg {
         limit: Option<u32>,
     },
 
+    AllModelsInfo {
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
+
     Minter {},
 
     CollectionInfo {},
@@ -238,6 +243,6 @@ pub struct AllNftsResponse<T> {
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct AllModelsResponse {
-    pub all_models_info: Vec<String>,
+pub struct AllModelsResponse<T> {
+    pub all_models_info: Vec<ModelInfo<T>>,
 }
