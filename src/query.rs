@@ -11,7 +11,7 @@ use crate::msg::{
     AllNftInfoResponse, ApprovalResponse, ApprovalsResponse, CollectionInfoResponse,
     ContractInfoResponse, MinterResponse, ModelInfoResponse, ModelsResponse, NftInfoResponse,
     NumModelsResponse, NumTokensResponse, OperatorsResponse, OwnerOfResponse, QueryMsg,
-    RoyaltyInfoResponse, TokensResponse,
+    RoyaltyInfoResponse, TokensResponse, AllNftsResponse
 };
 use crate::state::COLLECTION_INFO;
 use crate::state::{AnoneCw721Contract, Approval, TokenInfo};
@@ -210,6 +210,25 @@ where
         Ok(TokensResponse { tokens: tokens? })
     }
 
+    fn all_tokens_info(
+        &self,
+        deps: Deps,
+        start_after: Option<String>,
+        limit: Option<u32>,
+    ) -> StdResult<AllNftsResponse<T>> {
+        let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+        let start = start_after.map(Bound::exclusive);
+
+        let tokens: StdResult<Vec<TokenInfo<T>>> = self
+            .tokens
+            .range(deps.storage, start, None, Order::Ascending)
+            .take(limit)
+            .map(|item| item.map(|(_, info)| info))
+            .collect();
+
+        Ok(AllNftsResponse { all_tokens_info: tokens? })
+    }
+
     fn all_models(
         &self,
         deps: Deps,
@@ -294,6 +313,9 @@ where
             } => to_binary(&self.tokens(deps, owner, start_after, limit)?),
             QueryMsg::AllTokens { start_after, limit } => {
                 to_binary(&self.all_tokens(deps, start_after, limit)?)
+            },
+            QueryMsg::AllTokensInfo { start_after, limit } => {
+                to_binary(&self.all_tokens_info(deps, start_after, limit)?)
             },
             QueryMsg::AllModels { start_after, limit } => {
                 to_binary(&self.all_models(deps, start_after, limit)?)
