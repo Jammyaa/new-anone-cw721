@@ -219,7 +219,6 @@ pub struct NftInfoResponse<T> {
     pub extension: T,
 }
 
-
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct ModelInfoResponse<T> {
     pub owner: String,
