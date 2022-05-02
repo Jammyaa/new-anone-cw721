@@ -46,6 +46,9 @@ where
         }
 
         let image = Url::parse(&msg.collection_info.image)?;
+        if image.scheme() != "ipfs" {
+            return Err(ContractError::InvalidBaseURI {});
+        }
 
         if let Some(ref external_link) = msg.collection_info.external_link {
             Url::parse(external_link)?;
@@ -134,7 +137,7 @@ where
         }
 
         let model = self.models.load(deps.storage, &msg.model_id)?;
-
+        
         // create the token
         let token = TokenInfo {
             token_id: msg.token_id.clone(),
@@ -180,11 +183,16 @@ where
             return Err(ContractError::Unauthorized {});
         }
 
+        let model_uri = Url::parse(&msg.model_uri)?;
+        if model_uri.scheme() != "ipfs" {
+            return Err(ContractError::InvalidBaseURI {});
+        }
+
         // create the shoe model
         let model = ModelInfo {
             model_id: msg.model_id.clone(),
             owner: deps.api.addr_validate(&msg.owner)?,
-            model_uri: msg.model_uri,
+            model_uri: model_uri.to_string(),
             extension: msg.extension,
         };
         self.models
