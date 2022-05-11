@@ -3,11 +3,11 @@
 NODE="http://65.108.128.139:2281"
 CHAINID="anone-testnet-1"
 SLEEP_TIME="15s"
-CONTRACT="one16aqd3hrge8p30eku3fh0mrznmtupsug7722hzxshd0urs24nut7q85lfdg"
+CONTRACT="one1xmacmeqhdcr5w6qn2jpx8vs6kg3zaql944t4365jdsr8d8m67vns5mamhw"
 
 # CHANGE ONLY THIS
 OWNER="Developer"
-MODIFY="{\"modify_collection_info\": {\"description\":\"Test2\", \"image\":\"ipfs://bafybeigi3bwpvyvsmnbj46ra4hyffcxdeaj6ntfk5jpic5mx27x6ih2qvq/images/1.png\",  \"external_link\": \"123\", \"royalty_info\":{\"payment_address\": \"one1k2x29vppqrhgsdxtkmkpspnawm229lcpec7mm3\", \"share\":\"0.05\"}}}"
+MODIFY="{\"modify_collection_info\": {\"description\":\"Test3\", \"image\":\"ipfs://bafybeigi3bwpvyvsmnbj46ra4hyffcxdeaj6ntfk5jpic5mx27x6ih2qvq/images/1.png\",  \"external_link\": \"123\", \"royalty_info\":{\"payment_address\": \"one1k2x29vppqrhgsdxtkmkpspnawm229lcpec7mm3\", \"share\":\"0.05\"}}}"
 
 echo $MODIFY
 

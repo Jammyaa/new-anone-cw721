@@ -8,7 +8,10 @@ use cw721::{CustomMsg, Cw721Execute, Cw721ReceiveMsg, Expiration};
 use url::Url;
 
 use crate::error::ContractError;
-use crate::msg::{ContractInfoResponse, CreateShoeModelMsg, ExecuteMsg, InstantiateMsg, MintMsg, RoyaltyInfoResponse};
+use crate::msg::{
+    ContractInfoResponse, CreateShoeModelMsg, ExecuteMsg, InstantiateMsg, MintMsg,
+    RoyaltyInfoResponse,
+};
 use crate::state::{
     AnoneCw721Contract, Approval, CollectionInfo, ModelInfo, RoyaltyInfo, TokenInfo,
     COLLECTION_INFO,
@@ -113,7 +116,20 @@ where
                 msg,
             } => self.send_nft(deps, env, info, contract, token_id, msg),
             ExecuteMsg::Burn { token_id } => self.burn(deps, env, info, token_id),
-            ExecuteMsg::ModifyCollectionInfo {description, image, external_link, royalty_info} => self.modify_collection_info(deps, env, info, description, image, external_link, royalty_info)
+            ExecuteMsg::ModifyCollectionInfo {
+                description,
+                image,
+                external_link,
+                royalty_info,
+            } => self.modify_collection_info(
+                deps,
+                env,
+                info,
+                description,
+                image,
+                external_link,
+                royalty_info,
+            ),
         }
     }
 }
@@ -138,7 +154,6 @@ where
         }
 
         let model = self.models.load(deps.storage, &msg.model_id)?;
-        
         // create the token
         let token = TokenInfo {
             token_id: msg.token_id.clone(),
@@ -150,7 +165,6 @@ where
             extension: msg.extension,
         };
 
-        
         self.tokens
             .update(deps.storage, &msg.token_id, |old| match old {
                 Some(_) => Err(ContractError::Claimed {}),
@@ -224,20 +238,23 @@ where
         description: Option<String>,
         image: Option<String>,
         external_link: Option<String>,
-        royalty_info: Option<RoyaltyInfoResponse>
+        royalty_info: Option<RoyaltyInfoResponse>,
     ) -> Result<Response<C>, ContractError> {
         let mut collection_info = COLLECTION_INFO.load(deps.storage)?;
         let minter = self.minter.load(deps.storage)?;
-    
         if info.sender != minter {
             return Err(ContractError::Unauthorized {});
         }
 
         if let Some(i) = description.clone() {
             collection_info.description = i;
-        } 
+        }
 
         if let Some(i) = image.clone() {
+            let image_url = Url::parse(&i)?;
+            if image_url.scheme() != "ipfs" {
+                return Err(ContractError::InvalidBaseURI {});
+            }
             collection_info.image = i;
         }
 
@@ -276,7 +293,6 @@ where
             .add_attribute("new_royalty_info", modify_royalty_info_string))
     }
 }
-
 
 impl<'a, T, C> Cw721Execute<T, C> for AnoneCw721Contract<'a, T, C>
 where
