@@ -7,8 +7,9 @@ ACCOUNT="Developer"
 CHAINID="anone-testnet-1"
 CONTRACT_DIR="artifacts/new_anone_cw721.wasm"
 SLEEP_TIME="15s"
+CREATOR=""
 
-CREATOR=$(anoned keys show $ACCOUNT -a)
+CREATOR="one1k2x29vppqrhgsdxtkmkpspnawm229lcpec7mm3"
 INIT="{\"name\": \"Anone NFT Collection Contract\", \"symbol\": \"ANCC\", \"minter\": \"$CREATOR\", \"collection_info\": {\"creator\": \"$CREATOR\", \"description\": \"Test\", \"image\": \"ipfs://bafybeigi3bwpvyvsmnbj46ra4hyffcxdeaj6ntfk5jpic5mx27x6ih2qvq/images/1.png\", \"royalty_info\":{\"payment_address\": \"$CREATOR\", \"share\":\"0.1\"}}}"
 INIT_JSON=$(anoned tx wasm instantiate "73" "$INIT" --from "$ACCOUNT" --label "anone-cw721" -y --chain-id "$CHAINID" --node "$NODE" --gas 3000000 --fees 0uan1 -o json)
 
