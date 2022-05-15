@@ -5,7 +5,7 @@ NODE="http://65.108.128.139:2281"
 #OWNER="test"
 CHAINID="anone-testnet-1"
 SLEEP_TIME="15s"
-CONTRACT="one1jgee6ue6sp844g7wm46gdc0zkpgllt6yu5huspln23cnzhmslwkqk3qwgq"
+CONTRACT="one1ufrask4lpvxyx4tvmzq3rrh39gmr45lydr4yrw7qfdk40rv0vv3qzpquq0"
 
 LATEST=$(bash scripts/query_all_nfts.sh | jq -r ".data.tokens | last")
 TOKEN_ID=$(($LATEST+1))
